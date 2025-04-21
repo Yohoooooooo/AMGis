@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}A.M.G. Industrial Services{% endblock %}</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+{% block styles %}{% endblock %}
+<style>
+    .sidebar {
+        min-height: calc(50vh - 10px);
+        background-color: #f8f9fa;
+        padding-top: 20px;
+    }
+    .content {
+        padding: 20px;
+        height: calc(100vh - 56px);
+        overflow-y: auto;
+    }
+    .nav-link {
+        color: #495057;
+    }
+    .nav-link.active {
+        color: #0d6efd;
+        font-weight: bold;
+    }
+    .badge-pill {
+        border-radius: 50rem;
+    }
+    .empty-field {
+        color: #6c757d;
+        font-style: italic;
+    }
+    .select2-container {
+        width: 100% !important;
+    }
+    .dropdown-menu {
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1050;
+    }
+    .table-responsive {
+        max-height: calc(100vh - 250px);
+        overflow-y: auto;
+    }
+
+    /* Sticky table headers */
+    .table-responsive thead th {
+        position: sticky;
+        top: 0;
+        background-color: #f8f9fa;
+        z-index: 10;
+        box-shadow: 0 1px 0 rgba(0,0,0,.1);
+    }
+
+    .card-body {
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+    .new-tag {
+        background-color: #ffc107;
+        color: #212529;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        cursor: pointer;
+    }
+    .btn-xs {
+        padding: 0.1rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    /* Global search styles */
+    .global-search-container {
+        position: relative;
+    }
+    .global-search-results {
+        position: absolute;
+        width: 100%;
+        max-height: 400px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 0.25rem;
+        z-index: 1000;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .global-search-results .list-group-item {
+        cursor: pointer;
+    }
+    .global-search-results .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Role badge styling */
+    .role-badge {
+        display: inline-block;
+        padding: 0.25em 0.6em;
+        font-size: 75%;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: 0.25rem;
+        background-color: #6c757d;
+        color: white;
+        margin-right: 5px;
+    }
+
+    /* Sticky navbar */
+    .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+
+    /* Fixed position dropdowns */
+    .dropdown-menu.show {
+        position: absolute !important;
+        transform: none !important;
+        top: 100% !important;
+        left: 0 !important;
+    }
+
+    /* Autocomplete dropdown */
+    .ui-autocomplete {
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1051;
+        background-color: #fff;
+        border: 1px solid rgba(0,0,0,.15);
+        border-radius: 0.25rem;
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,.175);
+    }
+
+    .ui-autocomplete .ui-menu-item {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+    }
+
+    .ui-autocomplete .ui-menu-item:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('main.index') }}">A.M.G. Industrial Services</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                {% if current_user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ current_user.username }}
+                        {% if current_user.is_admin() %}
+                        <span class="badge bg-danger">Admin</span>
+                        {% endif %}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        {% if current_user.is_admin() %}
+                        <li><a class="dropdown-item" href="{{ url_for('admin.index') }}">Admin Panel</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        {% endif %}
+                        <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        {% if current_user.is_authenticated %}
+        <div class="col-md-2 sidebar">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" href="{{ url_for('main.index') }}">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'clients' in request.endpoint %}active{% endif %}" href="{{ url_for('clients.index') }}">
+                        <i class="bi bi-people"></i> Clients
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'rfqs.index' in request.endpoint or 'rfqs.add' in request.endpoint or 'rfqs.edit' in request.endpoint or 'rfqs.view' in request.endpoint %}active{% endif %}" href="{{ url_for('rfqs.index') }}">
+                        <i class="bi bi-file-earmark-text"></i> RFQs
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'rfqs.lost_declined' in request.endpoint %}active{% endif %}" href="{{ url_for('rfqs.lost_declined') }}">
+                        <i class="bi bi-archive"></i> Lost & Declined
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if 'purchase_orders' in request.endpoint %}active{% endif %}" href="{{ url_for('purchase_orders.index') }}">
+                        <i class="bi bi-cart"></i> Purchase Orders
+                    </a>
+                </li>
+                {% if current_user.is_admin() %}
+                <li class="nav-item mt-3">
+                    <a class="nav-link {% if 'admin' in request.endpoint %}active{% endif %}" href="{{ url_for('admin.index') }}">
+                        <i class="bi bi-gear"></i> Admin Panel
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+        <div class="col-md-10 content">
+        {% else %}
+        <div class="col-md-12 content">
+        {% endif %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<!-- New Client/Contact Modal -->
+<div class="modal fade" id="newEntityModal" tabindex="-1" aria-labelledby="newEntityModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="newEntityModalLabel">Add to Database</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Do you want to record this in the database?</p>
+        <p id="newEntityName" class="fw-bold"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+        <a href="#" id="addEntityLink" class="btn btn-primary">Yes</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Calculate total amount when price or quantity changes
+    document.addEventListener('DOMContentLoaded', function() {
+        const priceInput = document.getElementById('price');
+        const quantityInput = document.getElementById('quantity');
+        const totalInput = document.getElementById('total_amount');
+
+        if (priceInput && quantityInput && totalInput) {
+            const calculateTotal = function() {
+                const price = parseFloat(priceInput.value) || 0;
+                const quantity = parseInt(quantityInput.value) || 0;
+                totalInput.value = (price * quantity).toFixed(2);
+            };
+
+            priceInput.addEventListener('input', calculateTotal);
+            quantityInput.addEventListener('input', calculateTotal);
+
+            // Calculate on page load
+            calculateTotal();
+        }
+
+        // Auto-dismiss no results alert after 5 seconds
+        const noResultsAlert = document.querySelector('.alert-info:contains("No results found")');
+        if (noResultsAlert) {
+            setTimeout(function() {
+                noResultsAlert.classList.add('fade');
+                setTimeout(function() {
+                    noResultsAlert.remove();
+                }, 500);
+            }, 5000);
+        }
+
+        // Handle "New" tag clicks
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('new-tag')) {
+                const entityType = e.target.getAttribute('data-type');
+                const entityName = e.target.getAttribute('data-name');
+                const entityId = e.target.getAttribute('data-id');
+
+                document.getElementById('newEntityName').textContent = entityName;
+
+                let redirectUrl = '';
+                if (entityType === 'client') {
+                    redirectUrl = `/clients/add?name=${encodeURIComponent(entityName)}`;
+                } else if (entityType === 'contact') {
+                    redirectUrl = `/clients/contacts/add/${entityId}?name=${encodeURIComponent(entityName)}`;
+                }
+
+                document.getElementById('addEntityLink').href = redirectUrl;
+
+                const modal = new bootstrap.Modal(document.getElementById('newEntityModal'));
+                modal.show();
+            }
+        });
+    });
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
+

@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Order #{{ po.id }} - Business Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Purchase Order #{{ po.id }}</h1>
+    <div>
+        <a href="{{ url_for('purchase_orders.edit', id=po.id) }}" class="btn btn-primary me-2">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        <a href="{{ url_for('purchase_orders.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Purchase Orders
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Purchase Order Details & Status</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table">
+                    <tr>
+                        <th style="width: 30%">Client:</th>
+                        <td>{{ po.client.company_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Related RFQ:</th>
+                        <td>
+                            {% if po.rfq %}
+                                <a href="{{ url_for('rfqs.view', id=po.rfq.id) }}">RFQ #{{ po.rfq.id }}</a>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Status:</th>
+                        <td>
+                            <span class="badge {% if po.status == 'On Hold' %}bg-secondary{% elif po.status == 'On Process' %}bg-primary{% elif po.status == 'For Ordering' %}bg-info{% elif po.status == 'For Collection' %}bg-warning{% elif po.status == 'For Delivery' %}bg-danger{% elif po.status == 'Completed' %}bg-success{% endif %}">
+                                {{ po.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Last Updated:</th>
+                        <td>{{ po.last_updated.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table">
+                    <tr>
+                        <th>Total Amount:</th>
+                        <td>
+                            <strong>
+                                {% if po.currency == 'USD' %}
+                                    ${{ "%.2f"|format(po.total_amount) }}
+                                {% elif po.currency == 'PHP' %}
+                                    ₱{{ "%.2f"|format(po.total_amount) }}
+                                {% elif po.currency == 'EUR' %}
+                                    €{{ "%.2f"|format(po.total_amount) }}
+                                {% elif po.currency == 'JPY' %}
+                                    ¥{{ "%.2f"|format(po.total_amount) }}
+                                {% elif po.currency == 'GBP' %}
+                                    £{{ "%.2f"|format(po.total_amount) }}
+                                {% else %}
+                                    {{ po.currency }}{{ "%.2f"|format(po.total_amount) }}
+                                {% endif %}
+                            </strong>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <h6>Items Ordered:</h6>
+            <p class="border p-3 bg-light">{{ po.items_ordered }}</p>
+        </div>
+
+        <div class="mt-3">
+            <h6>Remarks:</h6>
+            <p class="border p-3 bg-light">{{ po.remarks or 'No remarks provided.' }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Payment Details</h5>
+    </div>
+    <div class="card-body">
+        <table class="table">
+            <tr>
+                <th style="width: 30%">Payment Terms:</th>
+                <td>{{ po.payment_terms or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <th>Payment Status:</th>
+                <td>
+                    <span class="badge {% if po.payment_status == 'Pending' %}bg-warning{% elif po.payment_status == 'Partial' %}bg-info{% elif po.payment_status == 'Paid' %}bg-success{% endif %}">
+                        {{ po.payment_status }}
+                    </span>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Delivery & Collection Details</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Delivery Information</h6>
+                <table class="table">
+                    <tr>
+                        <th style="width: 30%">Delivery Details:</th>
+                        <td>{{ po.delivery_details or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Delivery Address:</th>
+                        <td>{{ po.delivery_address or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Delivery Date:</th>
+                        <td>{{ po.delivery_date.strftime('%Y-%m-%d') if po.delivery_date else 'N/A' }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Collection Information</h6>
+                <table class="table">
+                    <tr>
+                        <th style="width: 30%">Collection Details:</th>
+                        <td>{{ po.collection_details or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Collection Date:</th>
+                        <td>{{ po.collection_date.strftime('%Y-%m-%d') if po.collection_date else 'N/A' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if po.attachments.count() > 0 %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Attachments</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Filename</th>
+                            <th>Date Uploaded</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attachment in po.attachments %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('static', filename='uploads/' + attachment.filename) }}" target="_blank">
+                                        {{ attachment.original_filename }}
+                                    </a>
+                                </td>
+                                <td>{{ attachment.date_uploaded.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

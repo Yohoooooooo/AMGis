@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Business Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1>{{ title }}</h1>
+<a href="{{ url_for('clients.index') }}" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i> Back
+</a>
+</div>
+
+<div class="card">
+<div class="card-body">
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <h4 class="mb-3">Company Information</h4>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Company Name <span class="text-danger">*</span></label>
+                {{ form.company_name(class="form-control") }}
+                {% if form.company_name.errors %}
+                <div class="text-danger">
+                    {% for error in form.company_name.errors %}
+                    <small>{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Industry</label>
+                {{ form.industry(class="form-control") }}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Company Address</label>
+            {{ form.company_address(class="form-control", rows=3) }}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Website</label>
+            {{ form.company_website(class="form-control", placeholder="https://example.com") }}
+        </div>
+
+        <!-- Removed attachment section -->
+
+        <h4 class="mb-3 mt-4">Contact Person Information</h4>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                {{ form.name(class="form-control") }}
+                {% if form.name.errors %}
+                <div class="text-danger">
+                    {% for error in form.name.errors %}
+                    <small>{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Position</label>
+                {{ form.position(class="form-control") }}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Email Address</label>
+            {% for email_form in form.emails %}
+            <div class="input-group mb-2">
+                {{ email_form.email(class="form-control", placeholder="email@example.com") }}
+                {% if loop.index > 1 %}
+                <button type="button" class="btn btn-outline-danger remove-field">
+                    <i class="bi bi-dash"></i>
+                </button>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <button type="button" class="btn btn-sm btn-outline-primary add-email-btn">
+                <i class="bi bi-plus"></i> Add
+            </button>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Telephone Number</label>
+            {% for phone_form in form.phones %}
+            <div class="input-group mb-2">
+                {{ phone_form.phone(class="form-control", placeholder="(02) 8XXX XXXX") }}
+                {% if loop.index > 1 %}
+                <button type="button" class="btn btn-outline-danger remove-field">
+                    <i class="bi bi-dash"></i>
+                </button>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <button type="button" class="btn btn-sm btn-outline-primary add-phone-btn">
+                <i class="bi bi-plus"></i> Add
+            </button>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Mobile Number</label>
+            {% for mobile_form in form.mobiles %}
+            <div class="input-group mb-2">
+                {{ mobile_form.mobile(class="form-control", placeholder="09XX XXX XXXX") }}
+                {% if loop.index > 1 %}
+                <button type="button" class="btn btn-outline-danger remove-field">
+                    <i class="bi bi-dash"></i>
+                </button>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <button type="button" class="btn btn-sm btn-outline-primary add-mobile-btn">
+                <i class="bi bi-plus"></i> Add
+            </button>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a href="{{ url_for('clients.index') }}" class="btn btn-secondary me-md-2">Cancel</a>
+            <button type="submit" class="btn btn-primary">{{ form.submit.label.text }}</button>
+        </div>
+    </form>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle removing input fields
+    document.querySelectorAll('.remove-field').forEach(button => {
+        button.addEventListener('click', function() {
+            this.closest('.input-group').remove();
+        });
+    });
+
+    // Handle adding new email fields
+    document.querySelector('.add-email-btn').addEventListener('click', function() {
+        const container = this.previousElementSibling.parentElement;
+        const template = container.querySelector('.input-group').cloneNode(true);
+        const input = template.querySelector('input');
+
+        // Clear input value
+        input.value = '';
+
+        // Add remove button if not already present
+        if (!template.querySelector('.remove-field')) {
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn btn-outline-danger remove-field';
+            removeBtn.innerHTML = '<i class="bi bi-dash"></i>';
+            removeBtn.addEventListener('click', function() {
+                this.closest('.input-group').remove();
+            });
+            template.appendChild(removeBtn);
+        }
+
+        // Insert before the add button
+        container.insertBefore(template, this);
+
+        // Add event listener to new remove button
+        template.querySelector('.remove-field').addEventListener('click', function() {
+            this.closest('.input-group').remove();
+        });
+    });
+
+    // Handle adding new phone fields
+    document.querySelector('.add-phone-btn').addEventListener('click', function() {
+        const container = this.previousElementSibling.parentElement;
+        const template = container.querySelector('.input-group').cloneNode(true);
+        const input = template.querySelector('input');
+
+        // Clear input value
+        input.value = '';
+
+        // Add remove button if not already present
+        if (!template.querySelector('.remove-field')) {
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn btn-outline-danger remove-field';
+            removeBtn.innerHTML = '<i class="bi bi-dash"></i>';
+            removeBtn.addEventListener('click', function() {
+                this.closest('.input-group').remove();
+            });
+            template.appendChild(removeBtn);
+        }
+
+        // Insert before the add button
+        container.insertBefore(template, this);
+
+        // Add event listener to new remove button
+        template.querySelector('.remove-field').addEventListener('click', function() {
+            this.closest('.input-group').remove();
+        });
+    });
+
+    // Handle adding new mobile fields
+    document.querySelector('.add-mobile-btn').addEventListener('click', function() {
+        const container = this.previousElementSibling.parentElement;
+        const template = container.querySelector('.input-group').cloneNode(true);
+        const input = template.querySelector('input');
+
+        // Clear input value
+        input.value = '';
+
+        // Add remove button if not already present
+        if (!template.querySelector('.remove-field')) {
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn btn-outline-danger remove-field';
+            removeBtn.innerHTML = '<i class="bi bi-dash"></i>';
+            removeBtn.addEventListener('click', function() {
+                this.closest('.input-group').remove();
+            });
+            template.appendChild(removeBtn);
+        }
+
+        // Insert before the add button
+        container.insertBefore(template, this);
+
+        // Add event listener to new remove button
+        template.querySelector('.remove-field').addEventListener('click', function() {
+            this.closest('.input-group').remove();
+        });
+    });
+});
+</script>
+{% endblock %}
+

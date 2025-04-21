@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Order RFQs - Business Management System{% endblock %}
+
+{% block styles %}
+<style>
+    /* Sticky header for tables */
+    .table-sticky-header thead th {
+        position: sticky;
+        top: 0;
+        background-color: #f8f9fa;
+        z-index: 10;
+    }
+
+    /* Role badge styling */
+    .role-badge {
+        background-color: #e9ecef;
+        color: #495057;
+        font-size: 0.85rem;
+        padding: 0.35em 0.65em;
+    }
+
+    /* Sort icons */
+    .sort-icon {
+        display: inline-block;
+        width: 0.8em;
+        height: 0.8em;
+        margin-left: 0.2em;
+    }
+
+    /* Filter section styling */
+    .filter-section {
+        background-color: #f8f9fa;
+        border-radius: 0.25rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Purchase Order RFQs</h1>
+    <a href="{{ url_for('rfqs.index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to RFQs
+    </a>
+</div>
+
+<!-- Filter and Search -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('rfqs.purchase_orders') }}" class="row g-3">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Search..." name="search" value="{{ search_query }}">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    {% if search_query %}
+                    <a href="{{ url_for('rfqs.purchase_orders', clear_search=1) }}" class="btn btn-outline-danger">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <select class="form-select" name="role" onchange="this.form.submit()">
+                    <option value="">Sales Person (All)</option>
+                    {% for code, name in roles %}
+                    <option value="{{ code }}" {% if role_filter == code %}selected{% endif %}>{{ code }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if no_results %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> No results found for your search. Showing all Purchase Order RFQs instead.
+</div>
+{% endif %}
+
+<!-- RFQs Table -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <span>Purchase Order RFQs</span>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Date Received</th>
+                    <th>Client</th>
+                    <th>Contact Person</th>
+                    <th>Item Description</th>
+                    <th>Sales Person</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if rfqs %}
+                    {% for rfq in rfqs %}
+                    <tr>
+                        <td>{{ rfq.date_received.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ rfq.client.company_name }}</td>
+                        <td>
+                            {% if rfq.contact %}
+                                {{ rfq.contact.name }}
+                            {% else %}
+                                {{ rfq.contact_person }}
+                            {% endif %}
+                        </td>
+                        <td>{{ rfq.item_description|truncate(50) }}</td>
+                        <td>
+                            {% for role_code, role_name in roles %}
+                                {% if role_code == rfq.assigned_role %}
+                                    <span class="badge bg-info text-dark">{{ role_code }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('rfqs.view', id=rfq.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('purchase_orders.add', rfq_id=rfq.id) }}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-cart-plus"></i> Create PO
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                No Purchase Order RFQs found
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Auto-submit form when filters change
+  const roleSelect = document.getElementById('role');
+
+  roleSelect.addEventListener('change', function() {
+      document.getElementById('filterForm').submit();
+  });
+});
+</script>
+{% endblock %}
+

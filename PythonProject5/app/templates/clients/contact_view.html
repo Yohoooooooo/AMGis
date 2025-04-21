@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Details - {{ contact.name }} - Business Management System{% endblock %}
+
+{% block styles %}
+<style>
+  .contact-detail-card {
+      margin-bottom: 1.5rem;
+  }
+  .contact-header {
+      background-color: #f8f9fa;
+      padding: 1.5rem;
+      border-radius: 0.25rem;
+      margin-bottom: 1.5rem;
+  }
+  .contact-info-list {
+      list-style: none;
+      padding-left: 0;
+  }
+  .contact-info-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #eee;
+  }
+  .contact-info-list li:last-child {
+      border-bottom: none;
+  }
+  .contact-info-list i {
+      width: 25px;
+      text-align: center;
+      margin-right: 10px;
+      color: #6c757d;
+  }
+  .contact-section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #f8f9fa;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Contact Details</h1>
+  <div>
+      <a href="{{ url_for('clients.edit_contact', id=contact.id) }}" class="btn btn-primary me-2">
+          <i class="bi bi-pencil"></i> Edit Contact
+      </a>
+      <a href="{{ url_for('clients.contacts', client_id=client.id) }}" class="btn btn-secondary">
+          <i class="bi bi-arrow-left"></i> Back to Contacts
+      </a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-4">
+      <div class="card contact-detail-card">
+          <div class="card-body">
+              <div class="text-center mb-4">
+                  <div class="display-1 text-muted">
+                      <i class="bi bi-person-circle"></i>
+                  </div>
+                  <h3 class="mt-2">{{ contact.name }}</h3>
+                  {% if contact.position %}
+                  <p class="text-muted">{{ contact.position }}</p>
+                  {% endif %}
+              </div>
+              
+              <div class="contact-section-title">
+                  <i class="bi bi-building"></i> Company Information
+              </div>
+              <ul class="contact-info-list mb-4">
+                  <li>
+                      <i class="bi bi-building"></i>
+                      <a href="{{ url_for('clients.view', id=client.id) }}">{{ client.company_name }}</a>
+                  </li>
+                  {% if client.industry %}
+                  <li>
+                      <i class="bi bi-briefcase"></i>
+                      {{ client.industry }}
+                  </li>
+                  {% endif %}
+                  {% if client.company_address %}
+                  <li>
+                      <i class="bi bi-geo-alt"></i>
+                      {{ client.company_address }}
+                  </li>
+                  {% endif %}
+                  {% if client.company_website %}
+                  <li>
+                      <i class="bi bi-globe"></i>
+                      <a href="{{ client.company_website }}" target="_blank">{{ client.company_website }}</a>
+                  </li>
+                  {% endif %}
+              </ul>
+              
+              <div class="d-grid gap-2">
+                  <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteContactModal">
+                      <i class="bi bi-trash"></i> Delete Contact
+                  </button>
+              </div>
+          </div>
+      </div>
+  </div>
+  
+  <div class="col-md-8">
+      <div class="card contact-detail-card">
+          <div class="card-header">
+              <h5 class="mb-0">Contact Information</h5>
+          </div>
+          <div class="card-body">
+              {% if contact.emails.count() > 0 %}
+              <div class="mb-4">
+                  <div class="contact-section-title">
+                      <i class="bi bi-envelope"></i> Email Addresses
+                  </div>
+                  <ul class="contact-info-list">
+                      {% for email in contact.emails %}
+                      <li>
+                          <i class="bi bi-envelope-fill"></i>
+                          <a href="mailto:{{ email.email }}">{{ email.email }}</a>
+                          <div class="float-end">
+                              <form action="{{ url_for('clients.delete_email', id=email.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this email?')">
+                                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                                      <i class="bi bi-trash"></i>
+                                  </button>
+                              </form>
+                          </div>
+                      </li>
+                      {% endfor %}
+                  </ul>
+                  <div class="mt-2">
+                      <a href="{{ url_for('clients.add_email', contact_id=contact.id) }}" class="btn btn-sm btn-outline-primary">
+                          <i class="bi bi-plus-circle"></i> Add Email
+                      </a>
+                  </div>
+              </div>
+              {% else %}
+              <div class="mb-4">
+                  <div class="contact-section-title">
+                      <i class="bi bi-envelope"></i> Email Addresses
+                  </div>
+                  <p class="text-muted">No email addresses found.</p>
+                  <a href="{{ url_for('clients.add_email', contact_id=contact.id) }}" class="btn btn-sm btn-outline-primary">
+                      <i class="bi bi-plus-circle"></i> Add Email
+                  </a>
+              </div>
+              {% endif %}
+              
+              {% if contact.phones.count() > 0 %}
+              <div class="mb-4">
+                  <div class="contact-section-title">
+                      <i class="bi bi-telephone"></i> Phone Numbers
+                  </div>
+                  <ul class="contact-info-list">
+                      {% for phone in contact.phones %}
+                      <li>
+                          <i class="bi bi-telephone-fill"></i>
+                          <a href="tel:{{ phone.phone }}">{{ phone.phone }}</a>
+                          <div class="float-end">
+                              <form action="{{ url_for('clients.delete_phone', id=phone.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this phone number?')">
+                                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                                      <i class="bi bi-trash"></i>
+                                  </button>
+                              </form>
+                          </div>
+                      </li>
+                      {% endfor %}
+                  </ul>
+                  <div class="mt-2">
+                      <a href="{{ url_for('clients.add_phone', contact_id=contact.id) }}" class="btn btn-sm btn-outline-primary">
+                          <i class="bi bi-plus-circle"></i> Add Phone
+                      </a>
+                  </div>
+              </div>
+              {% else %}
+              <div class="mb-4">
+                  <div class="contact-section-title">
+                      <i class="bi bi-telephone"></i> Phone Numbers
+                  </div>
+                  <p class="text-muted">No phone numbers found.</p>
+                  <a href="{{ url_for('clients.add_phone', contact_id=contact.id) }}" class="btn btn-sm btn-outline-primary">
+                      <i class="bi bi-plus-circle"></i> Add Phone
+                  </a>
+              </div>
+              {% endif %}
+              
+              {% if contact.mobiles.count() > 0 %}
+              <div class="mb-4">
+                  <div class="contact-section-title">
+                      <i class="bi bi-phone"></i> Mobile Numbers
+                  </div>
+                  <ul class="contact-info-list">
+                      {% for mobile in contact.mobiles %}
+                      <li>
+                          <i class="bi bi-phone-fill"></i>
+                          <a href="tel:{{ mobile.mobile }}">{{ mobile.mobile }}</a>
+                          <div class="float-end">
+                              <form action="{{ url_for('clients.delete_mobile', id=mobile.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this mobile number?')">
+                                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                                      <i class="bi bi-trash"></i>
+                                  </button>
+                              </form>
+                          </div>
+                      </li>
+                      {% endfor %}
+                  </ul>
+                  <div class="mt-2">
+                      <a href="{{ url_for('clients.add_mobile', contact_id=contact.id) }}" class="btn btn-sm btn-outline-primary">
+                          <i class="bi bi-plus-circle"></i> Add Mobile
+                      </a>
+                  </div>
+              </div>
+              {% else %}
+              <div class="mb-4">
+                  <div class="contact-section-title">
+                      <i class="bi bi-phone"></i> Mobile Numbers
+                  </div>
+                  <p class="text-muted">No mobile numbers found.</p>
+                  <a href="{{ url_for('clients.add_mobile', contact_id=contact.id) }}" class="btn btn-sm btn-outline-primary">
+                      <i class="bi bi-plus-circle"></i> Add Mobile
+                  </a>
+              </div>
+              {% endif %}
+              
+              <div class="mt-4">
+                  <div class="contact-section-title">
+                      <i class="bi bi-info-circle"></i> Additional Information
+                  </div>
+                  <ul class="contact-info-list">
+                      <li>
+                          <i class="bi bi-calendar"></i>
+                          <strong>Date Created:</strong> {{ contact.date_created.strftime('%Y-%m-%d') }}
+                      </li>
+                      <li>
+                          <i class="bi bi-clock"></i>
+                          <strong>Last Updated:</strong> {{ contact.last_updated.strftime('%Y-%m-%d %H:%M') }}
+                      </li>
+                  </ul>
+              </div>
+          </div>
+      </div>
+      
+      <!-- Related RFQs and POs could be added here in the future -->
+  </div>
+</div>
+
+<!-- Delete Contact Modal -->
+<div class="modal fade" id="deleteContactModal" tabindex="-1" aria-labelledby="deleteContactModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="deleteContactModalLabel">Confirm Delete</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <p>Are you sure you want to delete contact "{{ contact.name }}"?</p>
+              <p class="text-danger">This will also delete all contact information associated with this person.</p>
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <form action="{{ url_for('clients.delete_contact', id=contact.id) }}" method="POST">
+                  <button type="submit" class="btn btn-danger">Delete</button>
+              </form>
+          </div>
+      </div>
+  </div>
+</div>
+{% endblock %}
+

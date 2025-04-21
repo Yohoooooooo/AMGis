@@ -1,0 +1,9 @@
+Flask==2.2.5
+Flask-Login==0.6.3
+Flask-WTF==1.1.1
+Flask-SQLAlchemy==3.1.1
+mysqlclient==2.2.0  # For MySQL database connection (uses MySQLdb)
+WTForms==3.1.2
+Flask-Migrate==4.0.5
+email-validator==2.1.1
+python-dotenv==1.0.1

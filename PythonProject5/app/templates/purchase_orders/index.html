@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Orders - A.M.G. Industrial Services{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Purchase Orders</h1>
+</div>
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('purchase_orders.index') }}" class="row g-3">
+
+            <!-- Search Input -->
+            <div class="col-md-4">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Search..." name="search" value="{{ search_query if search_query else '' }}">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    {% if search_query %}
+                    <a href="{{ url_for('purchase_orders.index', clear_search=1) }}" class="btn btn-outline-danger">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Sort By Dropdown -->
+            <div class="col-md-3">
+                <select class="form-select" name="status_filter" onchange="this.form.submit()">
+                    <option value="">Status (All)</option>
+                    <option value="On Hold" {% if status_filter =='On Hold' %}selected{% endif %}>On Hold</option>
+                    <option value="On Process" {% if status_filter =='On Process' %}selected{% endif %}>On Process</option>
+                    <option value="For Ordering" {% if status_filter =='For Ordering' %}selected{% endif %}>For Ordering</option>
+                    <option value="For Delivery" {% if status_filter =='For Delivery' %}selected{% endif %}>For Delivery</option>
+                    <option value="For Collection" {% if status_filter =='For Collection' %}selected{% endif %}>For Collection</option>
+                    <option value="Completed" {% if status_filter =='Completed' %}selected{% endif %}>Completed</option>
+                    <option value="Canceled" {% if status_filter =='Canceled' %}selected{% endif %}>Canceled</option>
+                </select>
+            </div>
+
+            <!-- Role Filter Dropdown -->
+            <div class="col-md-3">
+                <select class="form-select" name="role" onchange="this.form.submit()">
+                    <option value="" {% if not role_filter %}selected{% endif %}>Sales Person (All)</option>
+                    {% for role_code, role_name in roles %}
+                    <option value="{{ role_code }}" {% if role_filter == role_code %}selected{% endif %}>{{ role_code }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Sort Order Buttons -->
+            <div class="col-md-2">
+                <div class="btn-group w-100">
+                    <a href="{{ url_for('purchase_orders.index', search=search_query, sort_by=sort_by, sort_order='asc', role=role_filter) }}"
+                       class="btn btn-outline-secondary {% if sort_order == 'asc' %}active{% endif %}">
+                        <i class="bi bi-sort-alpha-down"></i>
+                    </a>
+                    <a href="{{ url_for('purchase_orders.index', search=search_query, sort_by=sort_by, sort_order='desc', role=role_filter) }}"
+                       class="btn btn-outline-secondary {% if sort_order == 'desc' or not sort_order %}active{% endif %}">
+                        <i class="bi bi-sort-alpha-up"></i>
+                    </a>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+{% if no_results %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> No results found for your search. Showing all Purchase Orders instead.
+</div>
+{% endif %}
+
+
+
+<!-- Purchase Orders Table -->
+<div class="card">
+<div class="card-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <span>Purchase Orders List</span>
+    </div>
+</div>
+<div class="table-responsive">
+    <table class="table table-hover table-striped mb-0">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Client</th>
+                <th>Items</th>
+                <th>Sales Person</th>
+                <th>Status</th>
+                <th>Remarks</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if purchase_orders %}
+                {% for po in purchase_orders %}
+                <tr>
+                    <td>{{ po.id }}</td>
+                    <td>{{ po.client.company_name }}</td>
+                    <td>{{ po.items_ordered|truncate(30) }}</td>
+                    <td>
+                        {% if po.rfq and po.rfq.assigned_role %}
+                            {% for role in roles %}
+                                {% if role[0] == po.rfq.assigned_role %}
+                                    <span class="badge bg-info text-dark">{{ role[0] }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <span class="empty-field">-----</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge {% if po.status == 'On Hold' %}bg-secondary{% elif po.status == 'On Process' %}bg-primary{% elif po.status == 'For Ordering' %}bg-info{% elif po.status == 'For Collection' %}bg-warning{% elif po.status == 'For Delivery' %}bg-danger{% elif po.status == 'Completed' %}bg-success{% endif %}">
+                            {{ po.status }}
+                        </span>
+                    </td>
+                    <td>{{ po.remarks|truncate(30) if po.remarks else '-----' }}</td>
+                    <td class="text-end">
+                        <a href="{{ url_for('purchase_orders.view', id=po.id) }}" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        {% if current_user.can_edit() %}
+                        <a href="{{ url_for('purchase_orders.edit', id=po.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ po.id }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            No purchase orders found. Purchase orders are created from RFQs.
+                        </div>
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Clear search button functionality
+  document.getElementById('clearSearch').addEventListener('click', function() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('searchForm').submit();
+  });
+});
+</script>
+{% endblock %}

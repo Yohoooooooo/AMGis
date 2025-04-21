@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Add Mobile Number - Business Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Add Mobile Number for {{ contact.name }}</h1>  <!-- Changed from full_name to name -->
+  <a href="{{ url_for('clients.contacts', client_id=contact.client_id) }}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Contacts
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-body">
+      <form method="POST">
+          {{ form.hidden_tag() }}
+          {{ form.contact_id() }}
+
+          <div class="mb-3">
+              <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
+              {{ form.mobile(class="form-control", placeholder="09XX XXX XXXX") }}
+              {% if form.mobile.errors %}
+              <div class="text-danger">
+                  {% for error in form.mobile.errors %}
+                  <small>{{ error }}</small>
+                  {% endfor %}
+              </div>
+              {% endif %}
+          </div>
+
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="{{ url_for('clients.contacts', client_id=contact.client_id) }}" class="btn btn-secondary me-md-2">Cancel</a>
+              <button type="submit" class="btn btn-primary">{{ form.submit.label.text }}</button>
+          </div>
+      </form>
+  </div>
+</div>
+{% endblock %}
+

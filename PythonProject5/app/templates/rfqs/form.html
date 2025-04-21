@@ -1,0 +1,594 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - A.M.G. Industrial Services{% endblock %}
+
+{% block styles %}
+<style>
+/* Dropdown styling */
+.dropdown-menu {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Status change modal styling */
+.status-modal .modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.status-modal .modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Highlight new buttons */
+.new-button {
+    background-color: #e7f3ff;
+    border-color: #007bff;
+    transition: all 0.3s ease;
+}
+
+.new-button:hover {
+    background-color: #cce5ff;
+}
+
+/* Input field styling */
+.form-control.is-invalid {
+    border-color: #dc3545;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+/* Autocomplete dropdown */
+.ui-autocomplete {
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1051;
+}
+
+/* Contact suggestion dropdown */
+.contact-suggestion-dropdown {
+    position: absolute;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    background-color: white;
+    border: 1px solid #ced4da;
+    border-radius: 0 0 0.25rem 0.25rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.contact-suggestion-item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.contact-suggestion-item:hover {
+    background-color: #f8f9fa;
+}
+
+.contact-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.contact-position {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* No contacts message */
+.no-contacts-message {
+    padding: 0.5rem 1rem;
+    color: #6c757d;
+    font-style: italic;
+}
+</style>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1>{{ title }}</h1>
+<div>
+    <a href="javascript:history.back()" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+</div>
+
+<div class="card">
+<div class="card-body">
+  <form method="POST" enctype="multipart/form-data" id="rfqForm">
+      {{ form.hidden_tag() }}
+      {{ form.client_id() }}
+      {{ form.contact_id() }}
+
+      <div class="row">
+          <div class="col-md-6 mb-3">
+              {{ form.date_received.label(class="form-label") }}
+              {{ form.date_received(class="form-control", type="date") }}
+              {% if form.date_received.errors %}
+              <div class="text-danger">
+                  {% for error in form.date_received.errors %}
+                  <small>{{ error }}</small>
+                  {% endfor %}
+              </div>
+              {% endif %}
+          </div>
+
+          <div class="col-md-6 mb-3">
+              {{ form.client_name.label(class="form-label") }}
+              <div class="input-group">
+                  <input type="text" class="form-control" id="client_name" name="client_name" value="{{ form.client_name.data or '' }}" placeholder="Search for a client...">
+                  <a href="{{ url_for('clients.add') }}" class="btn btn-outline-primary new-button" id="new_client_btn">
+                      <i class="bi bi-plus-circle"></i> New
+                  </a>
+              </div>
+              {% if form.client_name.errors %}
+              <div class="text-danger">
+                  {% for error in form.client_name.errors %}
+                  <small>{{ error }}</small>
+                  {% endfor %}
+              </div>
+              {% endif %}
+          </div>
+      </div>
+
+      <div class="row">
+          <div class="col-md-6 mb-3">
+              {{ form.contact_person.label(class="form-label") }}
+              <div class="position-relative">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="contact_person" name="contact_person" value="{{ form.contact_person.data or '' }}" placeholder="Select a contact..." autocomplete="off">
+                    <a href="#" class="btn btn-outline-primary new-button" id="new_contact_btn">
+                        <i class="bi bi-plus-circle"></i> New
+                    </a>
+                </div>
+                <div id="contactSuggestions" class="contact-suggestion-dropdown" style="display: none;"></div>
+            </div>
+              {% if form.contact_person.errors %}
+              <div class="text-danger">
+                  {% for error in form.contact_person.errors %}
+                  <small>{{ error }}</small>
+                  {% endfor %}
+              </div>
+              {% endif %}
+          </div>
+
+          <div class="col-md-6 mb-3">
+              {{ form.bid_closing_date.label(class="form-label") }}
+              {{ form.bid_closing_date(class="form-control", type="date") }}
+          </div>
+      </div>
+
+      <div class="mb-3">
+          {{ form.item_description.label(class="form-label") }}
+          {{ form.item_description(class="form-control", rows=4) }}
+          {% if form.item_description.errors %}
+          <div class="text-danger">
+              {% for error in form.item_description.errors %}
+              <small>{{ error }}</small>
+              {% endfor %}
+          </div>
+          {% endif %}
+      </div>
+
+      <div class="row">
+          <div class="col-md-6 mb-3">
+              <label class="form-label">Sales Person</label>
+              {{ form.assigned_role(class="form-select") }}
+          </div>
+
+          <div class="col-md-6 mb-3">
+              {{ form.proposal_status.label(class="form-label") }}
+              {{ form.proposal_status(class="form-select", id="proposal_status") }}
+          </div>
+      </div>
+
+      <div class="mb-3">
+          {{ form.remarks.label(class="form-label") }}
+          {{ form.remarks(class="form-control", rows=3) }}
+      </div>
+
+      <div class="mb-3">
+          {{ form.attachments.label(class="form-label") }}
+          {{ form.attachments(class="form-control") }}
+          {% if form.attachments.errors %}
+          <div class="text-danger">
+              {% for error in form.attachments.errors %}
+              <small>{{ error }}</small>
+              {% endfor %}
+          </div>
+          {% endif %}
+          <div class="form-text">Optional. Allowed file types: PDF, DOC, DOCX, JPG, PNG, XLS, XLSX</div>
+      </div>
+
+      {% if attachments %}
+      <div class="mb-3">
+          <label class="form-label">Current Attachments</label>
+          <div class="table-responsive">
+              <table class="table table-sm table-bordered">
+                  <thead>
+                      <tr>
+                          <th>Filename</th>
+                          <th>Date Uploaded</th>
+                          <th>Actions</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for attachment in attachments %}
+                      <tr>
+                          <td>
+                              <a href="{{ url_for('static', filename='uploads/' + attachment.filename) }}" target="_blank">
+                                  {{ attachment.original_filename }}
+                              </a>
+                          </td>
+                          <td>{{ attachment.date_uploaded.strftime('%Y-%m-%d %H:%M') }}</td>
+                          <td>
+                              <form action="{{ url_for('rfqs.delete_attachment', id=attachment.id) }}" method="POST" class="d-inline">
+                                  <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this attachment?')">
+                                      <i class="bi bi-trash"></i> Delete
+                                  </button>
+                              </form>
+                          </td>
+                      </tr>
+                      {% endfor %}
+                  </tbody>
+              </table>
+          </div>
+      </div>
+      {% endif %}
+
+      <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+          <a href="javascript:history.back()" class="btn btn-secondary me-md-2">Cancel</a>
+          {{ form.submit(class="btn btn-primary") }}
+      </div>
+  </form>
+</div>
+</div>
+
+<!-- Status Change Modal -->
+<div class="modal fade status-modal" id="statusChangeModal" tabindex="-1" aria-labelledby="statusChangeModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="statusChangeModalLabel">Change Status</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <form id="statusChangeForm">
+                  <div class="mb-3">
+                      <label for="statusSelect" class="form-label">New Status</label>
+                      <select class="form-select" id="statusSelect">
+                          <option value="Pending">Pending</option>
+                          <option value="Submitted">Submitted</option>
+                          <option value="Purchase Order">Purchase Order</option>
+                          <option value="Declined">Declined</option>
+                          <option value="Lost">Lost</option>
+                      </select>
+                  </div>
+                  <div class="mb-3" id="remarksGroup" style="display: none;">
+                      <label for="statusRemarks" class="form-label">Remarks</label>
+                      <textarea class="form-control" id="statusRemarks" rows="3" placeholder="Please provide remarks for this status change"></textarea>
+                      <div class="form-text text-danger" id="remarksRequired" style="display: none;">Remarks are required for this status change.</div>
+                  </div>
+              </form>
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary" id="saveStatusBtn">Save Changes</button>
+          </div>
+      </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Client input field functionality
+const clientInput = document.getElementById('client_name');
+const clientIdInput = document.getElementById('client_id');
+const contactIdInput = document.getElementById('contact_id');
+const contactInput = document.getElementById('contact_person');
+const newClientBtn = document.getElementById('new_client_btn');
+const newContactBtn = document.getElementById('new_contact_btn');
+const proposalStatus = document.getElementById('proposal_status');
+const contactSuggestions = document.getElementById('contactSuggestions');
+const rfqForm = document.getElementById('rfqForm');
+
+// Initially hide new contact button
+newContactBtn.style.display = 'none';
+
+// Client autocomplete
+$(clientInput).autocomplete({
+  source: function(request, response) {
+      $.ajax({
+          url: "{{ url_for('rfqs.get_clients') }}",
+          dataType: "json",
+          data: {
+              term: request.term
+          },
+          success: function(data) {
+              response($.map(data, function(item) {
+                  return {
+                      label: item.text,
+                      value: item.text,
+                      id: item.id
+                  };
+              }));
+          }
+      });
+  },
+  minLength: 1,
+  select: function(event, ui) {
+      clientIdInput.value = ui.item.id;
+
+      // Load and display all contacts for this client immediately
+      loadAndDisplayAllContacts(ui.item.id);
+
+      // Hide new client button when a client is selected
+      newClientBtn.style.display = 'none';
+
+      // Show new contact button
+      newContactBtn.style.display = 'block';
+      newContactBtn.href = `{{ url_for('clients.add_contact', client_id=0) }}`.replace('0', ui.item.id);
+  },
+  change: function(event, ui) {
+      if (!ui.item) {
+          // No match was selected, show new client button
+          clientIdInput.value = '';
+          newClientBtn.style.display = 'block';
+
+          // Update href to include client name
+          const clientName = clientInput.value.trim();
+          if (clientName) {
+              const clientNameEncoded = encodeURIComponent(clientName);
+              newClientBtn.href = `{{ url_for('clients.add') }}?name=${clientNameEncoded}`;
+          }
+
+          // Clear contacts dropdown
+          contactInput.value = '';
+          contactIdInput.value = '';
+          newContactBtn.style.display = 'none';
+          contactSuggestions.style.display = 'none';
+      }
+  }
+});
+
+// When client input changes, check if it matches an existing client
+clientInput.addEventListener('input', function() {
+  const clientName = this.value.trim();
+  if (!clientName) {
+      // Hide new client button if input is empty
+      newClientBtn.style.display = 'none';
+      clientIdInput.value = '';
+
+      // Clear contacts
+      contactInput.value = '';
+      contactIdInput.value = '';
+      newContactBtn.style.display = 'none';
+      contactSuggestions.style.display = 'none';
+  }
+});
+
+// Contact input field functionality
+contactInput.addEventListener('focus', function() {
+  const clientId = clientIdInput.value;
+
+  // If a client is selected, show all contacts when the field is focused
+  if (clientId) {
+      loadAndDisplayAllContacts(clientId);
+  }
+});
+
+contactInput.addEventListener('input', function() {
+  const contactName = this.value.trim();
+  const clientId = clientIdInput.value;
+
+  if (clientId) {
+      // Filter existing contacts based on input
+      filterContactSuggestions(contactName);
+  } else {
+      // Hide contact suggestions if no client is selected
+      contactSuggestions.style.display = 'none';
+  }
+});
+
+// Function to load and display all contacts for a client
+function loadAndDisplayAllContacts(clientId) {
+  $.ajax({
+      url: "{{ url_for('rfqs.get_contacts', client_id=0) }}".replace('0', clientId),
+      dataType: "json",
+      success: function(data) {
+          displayContactSuggestions(data);
+      }
+  });
+}
+
+// Function to filter the already loaded contact suggestions
+function filterContactSuggestions(searchTerm) {
+  const suggestionItems = contactSuggestions.querySelectorAll('.contact-suggestion-item');
+  let hasVisibleItems = false;
+
+  suggestionItems.forEach(item => {
+      const contactName = item.querySelector('div:first-child').textContent;
+      if (contactName.toLowerCase().includes(searchTerm.toLowerCase())) {
+          item.style.display = 'block';
+          hasVisibleItems = true;
+      } else {
+          item.style.display = 'none';
+      }
+  });
+
+  // Show/hide the no contacts message
+  const noContactsMsg = contactSuggestions.querySelector('.no-contacts-message');
+  if (noContactsMsg) {
+      noContactsMsg.style.display = hasVisibleItems ? 'none' : 'block';
+  }
+
+  // Show new contact button if no matches and user typed something
+  if (!hasVisibleItems && searchTerm && clientIdInput.value) {
+      newContactBtn.style.display = 'block';
+      newContactBtn.href = `{{ url_for('clients.add_contact', client_id=0) }}?name=${encodeURIComponent(searchTerm)}`.replace('0', clientIdInput.value);
+  } else {
+      newContactBtn.style.display = 'none';
+  }
+
+  // Make sure the suggestions are visible
+  contactSuggestions.style.display = 'block';
+}
+
+// Function to display contact suggestions
+function displayContactSuggestions(contacts) {
+  contactSuggestions.innerHTML = '';
+
+  if (contacts.length > 0) {
+      contacts.forEach(contact => {
+          const suggestionItem = document.createElement('div');
+          suggestionItem.className = 'contact-suggestion-item';
+          suggestionItem.innerHTML = `
+              <div>${contact.name}</div>
+              ${contact.position ? `<div class="contact-position">${contact.position}</div>` : ''}
+          `;
+
+          // Add click event to select contact
+          suggestionItem.addEventListener('click', function() {
+              contactInput.value = contact.name;
+              contactIdInput.value = contact.id;
+              contactSuggestions.style.display = 'none';
+          });
+
+          contactSuggestions.appendChild(suggestionItem);
+      });
+
+      contactSuggestions.style.display = 'block';
+  } else {
+      // Show a message if no contacts are available
+      const noContactsMsg = document.createElement('div');
+      noContactsMsg.className = 'no-contacts-message';
+      noContactsMsg.textContent = 'No contacts found for this client';
+      contactSuggestions.appendChild(noContactsMsg);
+
+      contactSuggestions.style.display = 'block';
+
+      // Show new contact button
+      if (clientIdInput.value) {
+          newContactBtn.style.display = 'block';
+          newContactBtn.href = `{{ url_for('clients.add_contact', client_id=0) }}`.replace('0', clientIdInput.value);
+      }
+  }
+}
+
+// Hide contact suggestions when clicking outside
+document.addEventListener('click', function(event) {
+  if (!contactInput.contains(event.target) && !contactSuggestions.contains(event.target)) {
+      contactSuggestions.style.display = 'none';
+  }
+});
+
+// Function to load contacts for a client
+function loadContacts(clientId) {
+  // Clear current contact
+  contactInput.value = '';
+  contactIdInput.value = '';
+
+  // Show new contact button if client is selected
+  if (clientId) {
+      newContactBtn.href = `{{ url_for('clients.add_contact', client_id=0) }}`.replace('0', clientId);
+      newContactBtn.style.display = 'block';
+  } else {
+      newContactBtn.style.display = 'none';
+  }
+
+  // Pre-select contact if it exists
+  {% if form.contact_person.data and form.contact_id.data %}
+  const contactName = "{{ form.contact_person.data }}";
+  const contactId = "{{ form.contact_id.data }}";
+  if (contactName && contactId) {
+      contactInput.value = contactName;
+      contactIdInput.value = contactId;
+  }
+  {% endif %}
+}
+
+// Status change handling with remarks
+proposalStatus.addEventListener('change', function() {
+  const selectedStatus = this.value;
+
+  // Check if remarks are required for this status
+  if (['Submitted', 'Lost', 'Declined', 'Purchase Order'].includes(selectedStatus)) {
+      // Show modal for remarks
+      const modal = new bootstrap.Modal(document.getElementById('statusChangeModal'));
+
+      // Set the selected status in the modal
+      document.getElementById('statusSelect').value = selectedStatus;
+
+      // Show remarks field
+      document.getElementById('remarksGroup').style.display = 'block';
+
+      // Show the modal
+      modal.show();
+
+      // Reset the status dropdown to previous value
+      this.value = "{{ form.proposal_status.data }}";
+  }
+});
+
+// Handle status change in modal
+document.getElementById('statusSelect').addEventListener('change', function() {
+  const selectedStatus = this.value;
+  const remarksGroup = document.getElementById('remarksGroup');
+
+  // Show/hide remarks field based on status
+  if (['Submitted', 'Lost', 'Declined', 'Purchase Order'].includes(selectedStatus)) {
+      remarksGroup.style.display = 'block';
+  } else {
+      remarksGroup.style.display = 'none';
+  }
+});
+
+// Handle save button in modal
+document.getElementById('saveStatusBtn').addEventListener('click', function() {
+  const selectedStatus = document.getElementById('statusSelect').value;
+  const remarks = document.getElementById('statusRemarks').value;
+
+  // Check if remarks are required but missing
+  if (['Submitted', 'Lost', 'Declined', 'Purchase Order'].includes(selectedStatus) && !remarks.trim()) {
+      document.getElementById('remarksRequired').style.display = 'block';
+      return;
+  }
+
+  // Update the form fields
+  proposalStatus.value = selectedStatus;
+  if (remarks.trim()) {
+      document.getElementById('remarks').value = remarks;
+  }
+
+  // Close the modal
+  bootstrap.Modal.getInstance(document.getElementById('statusChangeModal')).hide();
+});
+
+// Pre-load client and contacts if editing
+{% if form.client_id.data %}
+const clientId = {{ form.client_id.data }};
+if (clientId) {
+  // Load and display all contacts for this client
+  loadAndDisplayAllContacts(clientId);
+
+  // Show new contact button
+  newContactBtn.style.display = 'block';
+  newContactBtn.href = `{{ url_for('clients.add_contact', client_id=0) }}`.replace('0', clientId);
+}
+{% endif %}
+});
+</script>
+{% endblock %}
+

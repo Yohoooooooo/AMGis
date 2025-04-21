@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Lost & Declined RFQs - Business Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Lost & Declined RFQs</h1>
+  <a href="{{ url_for('rfqs.index') }}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Back
+  </a>
+</div>
+
+<!-- Filter and Search -->
+<div class="card mb-4">
+  <div class="card-body">
+      <form method="GET" action="{{ url_for('rfqs.lost_declined') }}" class="row g-3">
+          <div class="col-md-4">
+              <div class="input-group">
+                  <input type="text" class="form-control" placeholder="Search..." name="search" value="{{ search_query }}">
+                  <button class="btn btn-outline-secondary" type="submit">
+                      <i class="bi bi-search"></i>
+                  </button>
+                  {% if search_query %}
+                  <a href="{{ url_for('rfqs.lost_declined', clear_search=1) }}" class="btn btn-outline-danger">
+                      <i class="bi bi-x-circle"></i>
+                  </a>
+                  {% endif %}
+              </div>
+          </div>
+          <div class="col-md-3">
+              <select class="form-select" name="status" onchange="this.form.submit()">
+                  <option value="">Status (All)</option>
+                  <option value="Lost" {% if status_filter =='Lost' %}selected{% endif %}>Lost</option>
+                  <option value="Declined" {% if status_filter =='Declined' %}selected{% endif %}>Declined</option>
+              </select>
+          </div>
+          <div class="col-md-3">
+              <select class="form-select" name="role" onchange="this.form.submit()">
+                  <option value="">Sales Person (All)</option>
+                  {% for code, name in roles %}
+                  <option value="{{ code }}" {% if role_filter == code %}selected{% endif %}>{{ code }}</option>
+                  {% endfor %}
+              </select>
+          </div>
+      </form>
+  </div>
+</div>
+
+{% if no_results %}
+<div class="alert alert-info">
+  <i class="bi bi-info-circle"></i> No results found for your search. Showing all Lost & Declined RFQs instead.
+</div>
+{% endif %}
+
+<!-- RFQs Table -->
+<div class="card">
+  <div class="card-header">
+      <div class="d-flex justify-content-between align-items-center">
+          <span>Lost & Declined RFQs</span>
+      </div>
+  </div>
+  <div class="table-responsive">
+      <table class="table table-hover table-striped mb-0">
+          <thead>
+              <tr>
+                  <th>Date Received</th>
+                  <th>Client</th>
+                  <th>Contact Person</th>
+                  <th>Item Description</th>
+                  <th>Sales Person</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+              </tr>
+          </thead>
+          <tbody>
+              {% if rfqs %}
+                  {% for rfq in rfqs %}
+                  <tr>
+                      <td>{{ rfq.date_received.strftime('%Y-%m-%d') }}</td>
+                      <td>{{ rfq.client.company_name }}</td>
+                      <td>
+                          {% if rfq.contact %}
+                              {{ rfq.contact.name }}
+                          {% else %}
+                              {{ rfq.contact_person }}
+                          {% endif %}
+                      </td>
+                      <td>{{ rfq.item_description|truncate(50) }}</td>
+                      <td>
+                          {% for role_code, role_name in roles %}
+                              {% if role_code == rfq.assigned_role %}
+                                  <span class="badge bg-info text-dark">{{ role_code }}</span>
+                              {% endif %}
+                          {% endfor %}
+                      </td>
+                      <td>
+                          {% if rfq.proposal_status == 'Lost' %}
+                              <span class="badge bg-danger">Lost</span>
+                          {% elif rfq.proposal_status == 'Declined' %}
+                              <span class="badge bg-secondary">Declined</span>
+                          {% endif %}
+                          {% if rfq.is_restored %}
+                              <span class="badge bg-info">Restored</span>
+                          {% endif %}
+                      </td>
+                      <td>
+                          <div class="btn-group">
+                              <a href="{{ url_for('rfqs.view', id=rfq.id) }}" class="btn btn-sm btn-outline-primary">
+                                  <i class="bi bi-eye"></i>
+                              </a>
+                              <a href="{{ url_for('rfqs.edit', id=rfq.id) }}" class="btn btn-sm btn-outline-secondary">
+                                  <i class="bi bi-pencil"></i>
+                              </a>
+                              <form action="{{ url_for('rfqs.restore', id=rfq.id) }}" method="POST" class="d-inline">
+                                  <button type="submit" class="btn btn-sm btn-outline-success"
+                                          onclick="return confirm('Are you sure you want to restore this RFQ?')">
+                                      <i class="bi bi-arrow-counterclockwise"></i>
+                                  </button>
+                              </form>
+                          </div>
+                      </td>
+                  </tr>
+                  {% endfor %}
+              {% else %}
+                  <tr>
+                      <td colspan="7" class="text-center py-4">
+                          <div class="text-muted">
+                              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                              No Lost or Declined RFQs found
+                          </div>
+                      </td>
+                  </tr>
+              {% endif %}
+          </tbody>
+      </table>
+  </div>
+</div>
+{% endblock %}
+

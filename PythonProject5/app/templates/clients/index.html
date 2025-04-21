@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Clients - A.M.G. Industrial Services{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Clients</h1>
+    <div>
+        <a href="{{ url_for('clients.add') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Client
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('clients.index') }}" id="searchForm">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="search" id="searchInput" placeholder="Search clients..." value="{{ search_query }}">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                            <i class="bi bi-x-lg"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-end">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                Sort by: {{ sort_by|replace('_', ' ')|title }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-lg-start">
+                                <li>
+                                    <a class="dropdown-item {% if sort_by == 'company_name' %}active{% endif %}"
+                                       href="{{ url_for('clients.index', search=search_query, sort_by='company_name', sort_order=sort_order) }}">
+                                        Company Name
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if sort_by == 'industry' %}active{% endif %}"
+                                       href="{{ url_for('clients.index', search=search_query, sort_by='industry', sort_order=sort_order) }}">
+                                        Industry
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if sort_by == 'date_created' %}active{% endif %}"
+                                       href="{{ url_for('clients.index', search=search_query, sort_by='date_created', sort_order=sort_order) }}">
+                                        Date Created
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if sort_by == 'last_updated' %}active{% endif %}"
+                                       href="{{ url_for('clients.index', search=search_query, sort_by='last_updated', sort_order=sort_order) }}">
+                                        Last Updated
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="btn-group">
+                            <a href="{{ url_for('clients.index', search=search_query, sort_by=sort_by, sort_order='asc') }}"
+                               class="btn btn-outline-secondary {% if sort_order == 'asc' %}active{% endif %}">
+                                <i class="bi bi-sort-alpha-down"></i>
+                            </a>
+                            <a href="{{ url_for('clients.index', search=search_query, sort_by=sort_by, sort_order='desc') }}"
+                               class="btn btn-outline-secondary {% if sort_order == 'desc' %}active{% endif %}">
+                                <i class="bi bi-sort-alpha-up"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if no_results %}
+<div class="alert alert-info">
+    No clients found matching your search criteria. Showing all clients instead.
+</div>
+{% endif %}
+
+{% if clients %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Company Name</th>
+                        <th>Contacts</th>
+                        <th>RFQs/POs</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for client in clients %}
+                    <tr>
+                        <td>{{ client.id }}</td>
+                        <td>{{ client.company_name }}</td>
+                        <td>
+                            <span class="badge bg-primary">{{ client.contacts.count() }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ client.rfqs.count() }} RFQs</span>
+                            <span class="badge bg-success">{{ client.purchase_orders.count() }} POs</span>
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ url_for('clients.view', id=client.id) }}" class="btn btn-sm btn-info" title="View Client">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{{ url_for('clients.contacts', client_id=client.id) }}" class="btn btn-sm btn-outline-primary" title="View Contacts">
+                                <i class="bi bi-people"></i>
+                            </a>
+                            {% if current_user.can_edit() %}
+                            <a href="{{ url_for('clients.edit', id=client.id) }}" class="btn btn-sm btn-primary" title="Edit Client">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ client.id }}" title="Delete Client">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    No clients found. <a href="{{ url_for('clients.add') }}">Add a client</a> to get started.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Clear search button functionality
+      document.getElementById('clearSearch').addEventListener('click', function() {
+          document.getElementById('searchInput').value = '';
+          document.getElementById('searchForm').submit();
+      });
+  });
+</script>
+{% endblock %}
